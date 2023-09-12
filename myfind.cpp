@@ -1,13 +1,8 @@
-#include <stdio.h>
-#include <getopt.h>
-#include <stdlib.h>
-#include <assert.h>
 #include <iostream>
 #include <filesystem>
-#include <string>
-#include <unistd.h>
+#include <getopt.h>
+#include <assert.h>
 
-namespace fs = std::filesystem;
 /* globale Variable fuer den Programmnamen */
 char *program_name = NULL;
 
@@ -22,63 +17,66 @@ void print_usage()
 int main(int argc, char *argv[])
 {
     char* searchdir = argv[1];
-    //char tmp[256];
-   std::string currentpath = std::filesystem::current_path();
-   std::cout << currentpath << std::endl;
-   int c;
-   int error = 0;
-   char *inputFile = NULL;
-   int cOptionA = 0;
 
-   program_name = argv[0];
+    if(searchdir == NULL)
+    {
+        print_usage();
+    }
 
-   while ((c = getopt(argc, argv, "Ri")) != EOF)
-   {
-      switch (c)
-      {
-      case 'R':        /* Option ohne Argument */
-         if (cOptionA) /* mehrmalige Verwendung? */
-         {
-            error = 1;
+    int c;
+    int error = 0;
+    char *inputFile = NULL;
+    int cOptionR = 0;
+    int cOptioni = 0;
+    program_name = argv[0];
+    bool case_insensitive = false;
+
+    while ((c = getopt(argc, argv, "Ri")) != EOF)
+    {
+       switch (c)
+       {
+       case 'R':        /* Option ohne Argument */
+            if (cOptionR) /* mehrmalige Verwendung? */
+            {
+                error = 1;
+                break;
+            }
+            cOptionR = 1;
             break;
-         }
-         cOptionA = 1;
-         printf("%s: parsing option a\n", program_name);
-         break;
-      case 'i':                 /* Option mit Argument */
-         if (inputFile != NULL) /* mehrmalige Verwendung? */
-         {
-            error = 1;
+        case 'i':                 /* Option mit Argument */
+            if (cOptioni) /* mehrmalige Verwendung? */
+            {
+                error = 1;
+                break;
+            }
+            cOptioni = 1;
+            case_insensitive = true;
             break;
-         }
-         inputFile = optarg; /* optarg zeigt auf Optionsargument */
-         printf("%s: parsing option f, argument: %s\n", program_name, inputFile);
-         break;
-      case '?': /* ungueltiges Argument */
-         error = 1;
-         break;
-      default: /* unmoeglich */
-         assert(0); 
-      }
-   }
-   if (error) /* Optionen fehlerhaft ? */
-   {
-      print_usage();
-   }
-   if ((argc < optind + 1) || (argc > optind + 2)) /* falsche Anzahl an Optionen */
-   {
-      print_usage();
-   }
+            case '?': /* ungueltiges Argument */
+                error = 1;
+                break;
+            default: /* unmoeglich */
+                assert(0); 
+        }
+    }
+    if (error) /* Optionen fehlerhaft ? */
+    {
+       print_usage();
+    }
+    if ((argc < optind + 1) || (argc > optind + 2)) /* falsche Anzahl an Optionen */
+    {
+       print_usage();
+    }
 
-   /* Die restlichen Argumente, die keine Optionen sind, befinden sich in
+    /* Die restlichen Argumente, die keine Optionen sind, befinden sich in
     * argv[optind] bis argv[argc-1]
     */
-   while (optind < argc)
-   {
-      /* aktuelles Argument: argv[optind] */
-      printf("%s: parsing argument %s\n", program_name, argv[optind]);
+    while (optind < argc)
+    {
+       /* aktuelles Argument: argv[optind] */
+       printf("%s: parsing argument %s\n", program_name, argv[optind]);
 
-      optind++;
-   }
-   return EXIT_SUCCESS;
- }
+       optind++;
+    }
+    return EXIT_SUCCESS;
+}
