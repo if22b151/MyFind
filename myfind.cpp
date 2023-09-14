@@ -24,21 +24,18 @@ void fileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive
         //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filname " << fs::path(filename) << std::endl;
         
         //convertion from string to const char* because strncasecmp() compares two char* variables
-        const char* filenameStrconv = filenameStr.c_str();
         if(case_insensitive) {
-            if(strncasecmp(filenameStrconv, filename, filenameStr.length()) == 0) {
-                std::cout << filename << " " << fs::absolute(filename) << std::endl;
+            if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
+                std::cout << filenameStr << " " << fs::absolute(filenameStr) << std::endl;
                 return;    
-            } else {
-                std::cout << "File not found!" << std::endl;
             }
         }
         if(filenameStr == filename) {
-            std::cout << filename << " " << fs::absolute(filename) << std::endl;
-        } else {
-            std::cout << "File not found!" << std::endl;
+            std::cout << filenameStr << " " << fs::absolute(filenameStr) << std::endl;
+            return;
         }
     }
+    std::cout << "File not found!" << std::endl;
     return;
 }
 
