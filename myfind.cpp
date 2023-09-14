@@ -16,22 +16,45 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-void fileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive) {
-    for(const auto& entry : fs::directory_iterator(searchdir)) {
+void recursivFileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive)
+{
+    for(const auto& entry : fs::recursive_directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
         //TODO: if directory and option -R recursive search
         //TODO: filesearch works down e.g. if i have another dir after myfind but it doesnt work upwards e.g. if the file is in ../ directories
-        //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filname " << fs::path(filename) << std::endl;
-        
+        //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filename " << fs::path(filename) << std::endl;
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
-                std::cout << filenameStr << " " << fs::absolute(filenameStr) << std::endl;
+                std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
                 return;    
             }
         }
         if(filenameStr == filename) {
-            std::cout << filenameStr << " " << fs::absolute(filenameStr) << std::endl;
+            std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
+            return;
+        }
+    }
+    std::cout << "File not found!" << std::endl;
+    return;
+}
+
+void fileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive) 
+{    
+    for(const auto& entry : fs::directory_iterator(searchdir)) {
+        const auto filenameStr = entry.path().filename().string();
+        //TODO: if directory and option -R recursive search
+        //TODO: filesearch works down e.g. if i have another dir after myfind but it doesnt work upwards e.g. if the file is in ../ directories
+        //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filename " << fs::path(filename) << std::endl;
+        //convertion from string to const char* because strncasecmp() compares two char* variables
+        if(case_insensitive) {
+            if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
+                std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
+                return;    
+            }
+        }
+        if(filenameStr == filename) {
+            std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
             return;
         }
     }
@@ -48,6 +71,7 @@ int main(int argc, char *argv[])
     int cOptioni = 0;
     program_name = argv[0];
     bool case_insensitive = false;
+    bool recursivOption = false;
 
     while ((c = getopt(argc, argv, "Ri")) != EOF)
     {
@@ -59,6 +83,7 @@ int main(int argc, char *argv[])
                 error = 1;
                 break;
             }
+            recursivOption = true;
             cOptionR = 1;
             break;
         case 'i':                 /* Option mit Argument */
@@ -70,20 +95,20 @@ int main(int argc, char *argv[])
             cOptioni = 1;
             case_insensitive = true;
             break;
-            case '?': /* ungueltiges Argument */
-                error = 1;
-                break;
-            default: /* unmoeglich */
-                assert(0); 
+        case '?':          /* ungueltiges Argument */
+            error = 1;
+            break;
+        default:           /* unmoeglich */
+            assert(0); 
         }
     }
     if (error) /* Optionen fehlerhaft ? */
     {
-       print_usage();
+        print_usage();
     }
-    if ((argc < optind + 1) || (argc > optind + 2)) /* falsche Anzahl an Optionen */
+    if ((argc < optind + 1))  /* falsche Anzahl an Optionen */
     {
-       print_usage();
+        print_usage();
     }
     char* searchdir = argv[optind];
 
@@ -95,9 +120,12 @@ int main(int argc, char *argv[])
     while (optind < argc)
     {
        /* aktuelles Argument: argv[optind] */
-       fileSearchthroughDir(searchdir, argv[optind], case_insensitive);
-
-       optind++;
+        if(!recursivOption)
+            fileSearchthroughDir(searchdir, argv[optind], case_insensitive);
+        else
+            recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive);
+        
+        optind++;
     }
     return EXIT_SUCCESS;
 }
