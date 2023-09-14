@@ -2,30 +2,51 @@
 #include <filesystem>
 #include <getopt.h>
 #include <assert.h>
+#include <strings.h>
+#include <string>
 
+namespace fs = std::filesystem;
 /* globale Variable fuer den Programmnamen */
 char *program_name = NULL;
 
 /* Funktion print_usage() zur Ausgabe der usage Meldung */
 void print_usage()
 {
-    std::cerr << "Usage:" << program_name << "[-R] [-i] searchpath filename1 [filename2] ...[filenameN]" << std::endl;
+    std::cerr << "\nUsage:" << program_name << "[-R] [-i] searchpath filename1 [filename2] ...[filenameN]" << std::endl;
     exit(EXIT_FAILURE);
+}
+
+void fileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive) {
+    for(const auto& entry : fs::directory_iterator(searchdir)) {
+        const auto filenameStr = entry.path().filename().string();
+        //TODO: if directory and option -R recursive search
+        //TODO: filesearch works down e.g. if i have another dir after myfind but it doesnt work upwards e.g. if the file is in ../ directories
+        //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filname " << fs::path(filename) << std::endl;
+        
+        //convertion from string to const char* because strncasecmp() compares two char* variables
+        const char* filenameStrconv = filenameStr.c_str();
+        if(case_insensitive) {
+            if(strncasecmp(filenameStrconv, filename, filenameStr.length()) == 0) {
+                std::cout << filename << " " << fs::absolute(filename) << std::endl;
+                return;    
+            } else {
+                std::cout << "File not found!" << std::endl;
+            }
+        }
+        if(filenameStr == filename) {
+            std::cout << filename << " " << fs::absolute(filename) << std::endl;
+        } else {
+            std::cout << "File not found!" << std::endl;
+        }
+    }
+    return;
 }
 
 /* main Funktion mit Argumentbehandlung */
 int main(int argc, char *argv[])
 {
-    char* searchdir = argv[1];
-
-    if(searchdir == NULL)
-    {
-        print_usage();
-    }
-
     int c;
     int error = 0;
-    char *inputFile = NULL;
     int cOptionR = 0;
     int cOptioni = 0;
     program_name = argv[0];
@@ -67,14 +88,17 @@ int main(int argc, char *argv[])
     {
        print_usage();
     }
+    char* searchdir = argv[optind];
 
     /* Die restlichen Argumente, die keine Optionen sind, befinden sich in
     * argv[optind] bis argv[argc-1]
     */
+    optind++;
+
     while (optind < argc)
     {
        /* aktuelles Argument: argv[optind] */
-       printf("%s: parsing argument %s\n", program_name, argv[optind]);
+       fileSearchthroughDir(searchdir, argv[optind], case_insensitive);
 
        optind++;
     }
