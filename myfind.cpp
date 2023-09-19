@@ -1,9 +1,11 @@
 #include <iostream>
 #include <filesystem>
-#include <getopt.h>
 #include <assert.h>
 #include <strings.h>
-#include <string>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
 
 namespace fs = std::filesystem;
 /* globale Variable fuer den Programmnamen */
@@ -16,49 +18,65 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-void recursivFileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive)
+void writeInPipe(const char* filenameStr, const char* absolutePath)
+{
+    FILE *fp;
+    if(!fs::exists("foo"))
+    {
+        if (mkfifo("foo", 0660) == -1)
+        {
+            fprintf(stderr, "myfifo: Error creating fifo foo\n");
+            return;
+        }
+    }
+
+    if ((fp = fopen("foo", "w")) != NULL)
+    {
+        fprintf(fp, "%d: %s: %s \n", getpid(), filenameStr, absolutePath);
+    }
+    fclose(fp);
+
+}
+
+void recursivFileSearchthroughDir( char* searchdir, char* filename, bool case_insensitive)
 {
     for(const auto& entry : fs::recursive_directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
-        //TODO: if directory and option -R recursive search
-        //TODO: filesearch works down e.g. if i have another dir after myfind but it doesnt work upwards e.g. if the file is in ../ directories
-        //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filename " << fs::path(filename) << std::endl;
-        //convertion from string to const char* because strncasecmp() compares two char* variables
-        if(case_insensitive) {
-            if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
-                std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
-                return;    
+        if(fs::is_regular_file(entry)){
+            //convertion from string to const char* because strncasecmp() compares two char* variables
+            if(case_insensitive) {
+                if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
+                    writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());
+                }
+            }
+            else if (filenameStr == filename) {
+                writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());            }
+            else
+            {
+                std::cerr << "File not found!" << std::endl;
             }
         }
-        if(filenameStr == filename) {
-            std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
-            return;
-        }
     }
-    std::cout << "File not found!" << std::endl;
     return;
 }
 
-void fileSearchthroughDir(char* searchdir, char* filename, bool case_insensitive) 
-{    
+void fileSearchthroughDir( char* searchdir, char* filename, bool case_insensitive) 
+{   
     for(const auto& entry : fs::directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
-        //TODO: if directory and option -R recursive search
-        //TODO: filesearch works down e.g. if i have another dir after myfind but it doesnt work upwards e.g. if the file is in ../ directories
-        //std::cout << "Filename in directory: " << filenameStr << " to search filename: " << filename << " absolute filepath to filename " << fs::path(filename) << std::endl;
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
-                std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
+                writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
                 return;    
             }
         }
         if(filenameStr == filename) {
-            std::cout << filenameStr << ": " << fs::absolute(entry) << std::endl;
+            writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
             return;
         }
     }
-    std::cout << "File not found!" << std::endl;
+    std::cerr << "File not found!" << std::endl;
     return;
 }
 
@@ -106,7 +124,7 @@ int main(int argc, char *argv[])
     {
         print_usage();
     }
-    if ((argc < optind + 1))  /* falsche Anzahl an Optionen */
+    if ((argc <= optind + 1))  /* falsche Anzahl an Optionen */
     {
         print_usage();
     }
@@ -119,13 +137,28 @@ int main(int argc, char *argv[])
 
     while (optind < argc)
     {
-       /* aktuelles Argument: argv[optind] */
-        if(!recursivOption)
-            fileSearchthroughDir(searchdir, argv[optind], case_insensitive);
-        else
-            recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive);
-        
-        optind++;
+        pid_t pid = fork();
+        switch(pid)
+        {
+            case -1:
+                std::cerr << "You are a Failure\n";
+                return EXIT_FAILURE;
+            break;
+            case 0:
+            // child
+            if(!recursivOption)
+                fileSearchthroughDir( searchdir, argv[optind], case_insensitive);
+            else
+                recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive);
+            optind++;
+            return EXIT_SUCCESS;
+            default:
+            optind++;
+            //parent
+            break;
+        }
     }
+    wait(NULL);
+
     return EXIT_SUCCESS;
 }
