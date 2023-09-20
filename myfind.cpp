@@ -5,7 +5,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-
+#include <vector>
+#include <fstream>
 
 namespace fs = std::filesystem;
 /* globale Variable fuer den Programmnamen */
@@ -18,7 +19,8 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-void writeInPipe(const char* filenameStr, const char* absolutePath)
+//void writeInPipe(const char* filenameStr, const char* absolutePath)
+void writeInPipe(std::vector<std::string> a)
 {
     FILE *fp;
     if(!fs::exists("foo"))
@@ -29,28 +31,34 @@ void writeInPipe(const char* filenameStr, const char* absolutePath)
             return;
         }
     }
-
-    if ((fp = fopen("foo", "w")) != NULL)
+    for(size_t i = 0; i < a.size(); i+=2)
     {
-        fprintf(fp, "%d: %s: %s \n", getpid(), filenameStr, absolutePath);
+        if ((fp = fopen("foo", "w")) != NULL)
+        {
+            fprintf(fp, "%d: %s: %s \n", getpid(), a[i].c_str(), a[i+1].c_str());
+        }
     }
     fclose(fp);
 
 }
 
-void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool case_insensitive)
+void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& a)
 {
+    
     for(const auto& entry : fs::recursive_directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
         if(fs::is_regular_file(entry)){
             if(case_insensitive) {
             //convertion from string to const char* because strncasecmp() compares two char* variables
                 if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                    writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());
+                    //writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());
+                    a.emplace_back(filenameStr);
+                    a.emplace_back(fs::absolute(entry));
                 }
             }
             else if (filenameStr == filename) {
-                writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());           
+                a.emplace_back(filenameStr);
+                a.emplace_back(fs::absolute(entry));         
             }
             else
             {
@@ -69,12 +77,12 @@ void fileSearchthroughDir( char* searchdir, std::string filename, bool case_inse
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
+                //writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
                 return;    
             }
         }
         if(filenameStr == filename) {
-            writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
+            //writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
             return;
         }
     }
@@ -92,7 +100,7 @@ int main(int argc, char *argv[])
     program_name = argv[0];
     bool case_insensitive = false;
     bool recursivOption = false;
-
+    std::vector<std::string> a;
     while ((c = getopt(argc, argv, "Ri")) != EOF)
     {
        switch (c)
@@ -151,7 +159,8 @@ int main(int argc, char *argv[])
             if(!recursivOption)
                 fileSearchthroughDir( searchdir, argv[optind], case_insensitive);
             else
-                recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive);
+                recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive, a);
+            writeInPipe(a);
             optind++;
             return EXIT_SUCCESS;
             default:
@@ -161,6 +170,13 @@ int main(int argc, char *argv[])
         }
     }
     wait(NULL);
+    /*std::ifstream file ("foo");
+    std::string path;
+    if ( file.is_open() ) { // always check whether the file is open
+        file >> path; // pipe file's content into stream
+        std::cout << path; // pipe stream's content to standard output
+    }*/
+    
 
     return EXIT_SUCCESS;
 }
