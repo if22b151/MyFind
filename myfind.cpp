@@ -38,19 +38,20 @@ void writeInPipe(const char* filenameStr, const char* absolutePath)
 
 }
 
-void recursivFileSearchthroughDir( char* searchdir, char* filename, bool case_insensitive)
+void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool case_insensitive)
 {
     for(const auto& entry : fs::recursive_directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
         if(fs::is_regular_file(entry)){
-            //convertion from string to const char* because strncasecmp() compares two char* variables
             if(case_insensitive) {
-                if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
+            //convertion from string to const char* because strncasecmp() compares two char* variables
+                if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
                     writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());
                 }
             }
             else if (filenameStr == filename) {
-                writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());            }
+                writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());           
+            }
             else
             {
                 std::cerr << "File not found!" << std::endl;
@@ -61,13 +62,13 @@ void recursivFileSearchthroughDir( char* searchdir, char* filename, bool case_in
     return;
 }
 
-void fileSearchthroughDir( char* searchdir, char* filename, bool case_insensitive) 
+void fileSearchthroughDir( char* searchdir, std::string filename, bool case_insensitive) 
 {   
     for(const auto& entry : fs::directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
-            if(strncasecmp(filenameStr.c_str(), filename, filenameStr.length()) == 0) {
+            if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
                 writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
                 return;    
             }
