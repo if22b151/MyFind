@@ -14,7 +14,7 @@ char *program_name = NULL;
 /* Funktion print_usage() zur Ausgabe der usage Meldung */
 void print_usage()
 {
-    std::cerr << "\nUsage:" << program_name << "[-R] [-i] searchpath filename1 [filename2] ...[filenameN]" << std::endl;
+    std::cerr << "Usage:" << program_name << "[-R] [-i] searchpath filename1 [filename2] ...[filenameN]" << std::endl;
     exit(EXIT_FAILURE);
 }
 
@@ -54,6 +54,7 @@ void recursivFileSearchthroughDir( char* searchdir, char* filename, bool case_in
             else
             {
                 std::cerr << "File not found!" << std::endl;
+                return;
             }
         }
     }
