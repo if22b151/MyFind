@@ -20,9 +20,18 @@ void print_usage()
 }
 
 //void writeInPipe(const char* filenameStr, const char* absolutePath)
-void writeInPipe(std::vector<std::string> a)
+void writeInTerminal(std::vector<std::string> foundPathes)
 {
-    FILE *fp;
+    if(!foundPathes.empty())
+    {
+        for(size_t i = 0; i < foundPathes.size(); i+=2)
+        {
+            std::cout <<  getpid() << ": " << foundPathes[i] << ": " << foundPathes[i+1] << '\n';
+        }
+    } else {
+        std::cerr << "File not found!" << std::endl;
+    }
+    /* FILE *fp;
     if(!fs::exists("foo"))
     {
         if (mkfifo("foo", 0660) == -1)
@@ -38,7 +47,7 @@ void writeInPipe(std::vector<std::string> a)
             fprintf(fp, "%d: %s: %s \n", getpid(), a[i].c_str(), a[i+1].c_str());
         }
     }
-    fclose(fp);
+    fclose(fp); */
 
 }
 
@@ -100,7 +109,7 @@ int main(int argc, char *argv[])
     program_name = argv[0];
     bool case_insensitive = false;
     bool recursivOption = false;
-    std::vector<std::string> a;
+    std::vector<std::string> foundPathes;
     while ((c = getopt(argc, argv, "Ri")) != EOF)
     {
        switch (c)
@@ -159,8 +168,8 @@ int main(int argc, char *argv[])
             if(!recursivOption)
                 fileSearchthroughDir( searchdir, argv[optind], case_insensitive);
             else
-                recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive, a);
-            writeInPipe(a);
+                recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive, foundPathes);
+            writeInTerminal(foundPathes);
             optind++;
             return EXIT_SUCCESS;
             default:
