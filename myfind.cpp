@@ -69,17 +69,17 @@ void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool ca
                 a.emplace_back(filenameStr);
                 a.emplace_back(fs::absolute(entry));         
             }
-            else
-            {
-                std::cerr << "File not found!" << std::endl;
-                return;
-            }
+            // else
+            // {
+            //     std::cerr << "File not found!" << std::endl;
+            //     return;
+            // }
         }
     }
     return;
 }
 
-void fileSearchthroughDir( char* searchdir, std::string filename, bool case_insensitive) 
+void fileSearchthroughDir( char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& a) 
 {   
     for(const auto& entry : fs::directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
@@ -87,15 +87,16 @@ void fileSearchthroughDir( char* searchdir, std::string filename, bool case_inse
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
                 //writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
-                return;    
+                a.emplace_back(filenameStr);
+                a.emplace_back(fs::absolute(entry));
             }
         }
-        if(filenameStr == filename) {
+        else if(filenameStr == filename) {
             //writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
-            return;
+            a.emplace_back(filenameStr);
+            a.emplace_back(fs::absolute(entry));
         }
     }
-    std::cerr << "File not found!" << std::endl;
     return;
 }
 
@@ -166,11 +167,10 @@ int main(int argc, char *argv[])
             case 0:
             // child
             if(!recursivOption)
-                fileSearchthroughDir( searchdir, argv[optind], case_insensitive);
+                fileSearchthroughDir( searchdir, argv[optind], case_insensitive, foundPathes);
             else
                 recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive, foundPathes);
             writeInTerminal(foundPathes);
-            optind++;
             return EXIT_SUCCESS;
             default:
             optind++;
@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
         }
     }
     wait(NULL);
+
     /*std::ifstream file ("foo");
     std::string path;
     if ( file.is_open() ) { // always check whether the file is open
