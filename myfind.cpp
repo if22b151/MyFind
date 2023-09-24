@@ -31,27 +31,9 @@ void writeInTerminal(std::vector<std::string> foundPathes)
     } else {
         std::cerr << "File not found!" << std::endl;
     }
-    /* FILE *fp;
-    if(!fs::exists("foo"))
-    {
-        if (mkfifo("foo", 0660) == -1)
-        {
-            fprintf(stderr, "myfifo: Error creating fifo foo\n");
-            return;
-        }
-    }
-    for(size_t i = 0; i < a.size(); i+=2)
-    {
-        if ((fp = fopen("foo", "w")) != NULL)
-        {
-            fprintf(fp, "%d: %s: %s \n", getpid(), a[i].c_str(), a[i+1].c_str());
-        }
-    }
-    fclose(fp); */
-
 }
 
-void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& a)
+void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& foundPathes)
 {
     
     for(const auto& entry : fs::recursive_directory_iterator(searchdir)) {
@@ -60,20 +42,14 @@ void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool ca
             if(case_insensitive) {
             //convertion from string to const char* because strncasecmp() compares two char* variables
                 if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                    //writeInPipe(filenameStr.c_str(), fs::absolute(entry).c_str());
-                    a.emplace_back(filenameStr);
-                    a.emplace_back(fs::absolute(entry));
+                    foundPathes.emplace_back(filenameStr);
+                    foundPathes.emplace_back(fs::absolute(entry));
                 }
             }
             else if (filenameStr == filename) {
-                a.emplace_back(filenameStr);
-                a.emplace_back(fs::absolute(entry));         
+                foundPathes.emplace_back(filenameStr);
+                foundPathes.emplace_back(fs::absolute(entry));         
             }
-            // else
-            // {
-            //     std::cerr << "File not found!" << std::endl;
-            //     return;
-            // }
         }
     }
     return;
@@ -86,13 +62,11 @@ void fileSearchthroughDir( char* searchdir, std::string filename, bool case_inse
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                //writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
                 a.emplace_back(filenameStr);
                 a.emplace_back(fs::absolute(entry));
             }
         }
         else if(filenameStr == filename) {
-            //writeInPipe( filenameStr.c_str(), fs::absolute(entry).c_str());
             a.emplace_back(filenameStr);
             a.emplace_back(fs::absolute(entry));
         }
@@ -179,14 +153,5 @@ int main(int argc, char *argv[])
         }
     }
     wait(NULL);
-
-    /*std::ifstream file ("foo");
-    std::string path;
-    if ( file.is_open() ) { // always check whether the file is open
-        file >> path; // pipe file's content into stream
-        std::cout << path; // pipe stream's content to standard output
-    }*/
-    
-
     return EXIT_SUCCESS;
 }
