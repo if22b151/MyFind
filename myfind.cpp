@@ -55,20 +55,20 @@ void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool ca
     return;
 }
 
-void fileSearchthroughDir( char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& a) 
+void fileSearchthroughDir( char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& foundPathes) 
 {   
     for(const auto& entry : fs::directory_iterator(searchdir)) {
         const auto filenameStr = entry.path().filename().string();
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                a.emplace_back(filenameStr);
-                a.emplace_back(fs::absolute(entry));
+                foundPathes.emplace_back(filenameStr);
+                foundPathes.emplace_back(fs::absolute(entry));
             }
         }
         else if(filenameStr == filename) {
-            a.emplace_back(filenameStr);
-            a.emplace_back(fs::absolute(entry));
+            foundPathes.emplace_back(filenameStr);
+            foundPathes.emplace_back(fs::absolute(entry));
         }
     }
     return;
