@@ -19,7 +19,6 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-//void writeInPipe(const char* filenameStr, const char* absolutePath)
 void writeInTerminal(std::vector<std::string> foundPathes)
 {
     if(!foundPathes.empty())
