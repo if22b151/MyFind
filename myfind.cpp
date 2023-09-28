@@ -20,11 +20,14 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-void writeInPipe(std::vector<std::string>& foundPathes) {
-    FILE* fp;
-    if((fp = fopen("foundpathes", "w")) != NULL) {
-        for(size_t i = 0; i < foundPathes.size(); i+=2) {
-            fprintf(fp, "%d: %s: %s\n", getpid(), foundPathes[i].c_str(), foundPathes[i+1].c_str());
+//void writeInPipe(const char* filenameStr, const char* absolutePath)
+void writeInTerminal(std::vector<std::string> foundPathes)
+{
+    if(!foundPathes.empty())
+    {
+        for(size_t i = 0; i < foundPathes.size(); i+=2)
+        {
+            std::cout <<  getpid() << ": " << foundPathes[i] << ": " << foundPathes[i+1] << '\n';
         }
     fclose(fp); 
     } else {
