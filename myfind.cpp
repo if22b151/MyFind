@@ -28,7 +28,7 @@ void writeInPipe(std::vector<std::string>& foundPathes) {
         }
     fclose(fp); 
     } else {
-        std::cerr << "Couldnt open file fpor writing\n";
+        std::cerr << "Couldnt open file for writing\n";
     }
     return;
 }
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
             case 0:
             // child
             if(!recursivOption)
-                fileSearchthroughDir( searchdir, argv[optind], case_insensitive, foundPathes);
+                fileSearchthroughDir(searchdir, argv[optind], case_insensitive, foundPathes);
             else
                 recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive, foundPathes);
             return EXIT_SUCCESS;
