@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <assert.h>
 #include <strings.h>
+#include <cstring>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -9,7 +10,7 @@
 #include <fstream>
 
 namespace fs = std::filesystem;
-/* globale Variable fuer den Programmnamen */
+
 char *program_name = NULL;
 
 /* Funktion print_usage() zur Ausgabe der usage Meldung */
@@ -19,18 +20,17 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-//void writeInPipe(const char* filenameStr, const char* absolutePath)
-void writeInTerminal(std::vector<std::string> foundPathes)
-{
-    if(!foundPathes.empty())
-    {
-        for(size_t i = 0; i < foundPathes.size(); i+=2)
-        {
-            std::cout <<  getpid() << ": " << foundPathes[i] << ": " << foundPathes[i+1] << '\n';
+void writeInPipe(std::vector<std::string>& foundPathes) {
+    FILE* fp;
+    if((fp = fopen("foundpathes", "w")) != NULL) {
+        for(size_t i = 0; i < foundPathes.size(); i+=2) {
+            fprintf(fp, "%d: %s: %s\n", getpid(), foundPathes[i].c_str(), foundPathes[i+1].c_str());
         }
+    fclose(fp); 
     } else {
-        std::cerr << "File not found!" << std::endl;
+        std::cerr << "Couldnt open file fpor writing\n";
     }
+    return;
 }
 
 void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool case_insensitive, std::vector<std::string>& foundPathes)
@@ -42,16 +42,17 @@ void recursivFileSearchthroughDir(char* searchdir, std::string filename, bool ca
             if(case_insensitive) {
             //convertion from string to const char* because strncasecmp() compares two char* variables
                 if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                    foundPathes.emplace_back(filenameStr);
                     foundPathes.emplace_back(fs::absolute(entry));
+                    foundPathes.emplace_back(filenameStr);
                 }
             }
             else if (filenameStr == filename) {
-                foundPathes.emplace_back(filenameStr);
-                foundPathes.emplace_back(fs::absolute(entry));         
+                foundPathes.emplace_back(fs::absolute(entry));
+                foundPathes.emplace_back(filenameStr);       
             }
         }
     }
+    writeInPipe(foundPathes);
     return;
 }
 
@@ -62,15 +63,16 @@ void fileSearchthroughDir( char* searchdir, std::string filename, bool case_inse
         //convertion from string to const char* because strncasecmp() compares two char* variables
         if(case_insensitive) {
             if(strncasecmp(filenameStr.c_str(), filename.c_str(), filenameStr.length()) == 0) {
-                foundPathes.emplace_back(filenameStr);
                 foundPathes.emplace_back(fs::absolute(entry));
+                foundPathes.emplace_back(filenameStr);   
             }
         }
         else if(filenameStr == filename) {
-            foundPathes.emplace_back(filenameStr);
             foundPathes.emplace_back(fs::absolute(entry));
+            foundPathes.emplace_back(filenameStr);
         }
     }
+    writeInPipe(foundPathes);
     return;
 }
 
@@ -122,20 +124,24 @@ int main(int argc, char *argv[])
     {
         print_usage();
     }
-    char* searchdir = argv[optind];
 
+    if(mkfifo("foundpathes", 0660) == -1) {
+        std::cerr << "Couldnt make pipe\n";
+        return EXIT_FAILURE;
+    }
+
+    char* searchdir = argv[optind];
     /* Die restlichen Argumente, die keine Optionen sind, befinden sich in
     * argv[optind] bis argv[argc-1]
     */
     optind++;
-
     while (optind < argc)
     {
         pid_t pid = fork();
         switch(pid)
         {
             case -1:
-                std::cerr << "You are a Failure\n";
+                std::cerr << "Couldnt make child\n";
                 return EXIT_FAILURE;
             break;
             case 0:
@@ -144,7 +150,6 @@ int main(int argc, char *argv[])
                 fileSearchthroughDir( searchdir, argv[optind], case_insensitive, foundPathes);
             else
                 recursivFileSearchthroughDir(searchdir, argv[optind], case_insensitive, foundPathes);
-            writeInTerminal(foundPathes);
             return EXIT_SUCCESS;
             default:
             optind++;
@@ -152,6 +157,28 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    wait(NULL);
+    pid_t childpid;
+    while((childpid = waitpid(-1, NULL, WNOHANG))) {
+        if(childpid == -1 && (errno != EINTR)) {
+            break;
+        }
+    }
+    FILE* fp;
+    char buff[2000];
+    if((fp = fopen("foundpathes", "r")) != NULL) {
+        while(fgets(buff, sizeof(buff), fp) != NULL) {
+            puts(buff);
+        }
+        fclose(fp);
+
+        //remove pipe
+        if(remove("foundpathes") == -1){
+            std::cerr << "Couldnt remove pipe\n";
+            return EXIT_FAILURE;
+        }
+    } else {
+        std::cerr << "Couldnt open pipe for reading\n";
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
