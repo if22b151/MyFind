@@ -28,7 +28,7 @@ void writeInPipe(std::vector<std::string>& foundPathes) {
         }
     fclose(fp); 
     } else {
-        std::cerr << "Couldnt open file for writing\n";
+        std::cerr << "Could not open file for writing\n";
     }
     return;
 }
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     }
 
     if(mkfifo("foundpathes", 0660) == -1) {
-        std::cerr << "Couldnt make pipe\n";
+        std::cerr << "Could not make pipe\n";
         return EXIT_FAILURE;
     }
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
         switch(pid)
         {
             case -1:
-                std::cerr << "Couldnt make child\n";
+                std::cerr << "Could not make child\n";
                 return EXIT_FAILURE;
             break;
             case 0:
@@ -167,17 +167,17 @@ int main(int argc, char *argv[])
     char buff[2000];
     if((fp = fopen("foundpathes", "r")) != NULL) {
         while(fgets(buff, sizeof(buff), fp) != NULL) {
-            puts(buff);
+            fputs(buff, stdout);
         }
         fclose(fp);
 
         //remove pipe
         if(remove("foundpathes") == -1){
-            std::cerr << "Couldnt remove pipe\n";
+            std::cerr << "Could not remove pipe\n";
             return EXIT_FAILURE;
         }
     } else {
-        std::cerr << "Couldnt open pipe for reading\n";
+        std::cerr << "Could not open pipe for reading\n";
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
