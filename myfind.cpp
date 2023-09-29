@@ -21,26 +21,8 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-// void writeInPipe(std::vector<std::string>& foundPathes) {
-//     FILE* fp;
-//     if((fp = fopen("foundpathes", "w")) != NULL) {
-//         for(size_t i = 0; i < foundPathes.size(); i+=2) {
-//             fprintf(fp, "%d: %s: %s\n", getpid(), foundPathes[i].c_str(), foundPathes[i+1].c_str());
-//         }
-//     fclose(fp); 
-//     } else {
-//         std::cerr << "Could not open file for writing\n";
-//     }
-//     return;
-// }
-
 void writeInPipe(std::vector<std::string>& foundPathes, int fd1) 
 {
-    /*
-    fdopen(fd[1], "w"): Diese Funktion versucht, den Dateideskriptor fd[1] als Dateipuffer zu öffnen, 
-    der für Schreibzugriffe konfiguriert ist ("w" steht für Schreiben). Wenn dies erfolgreich ist, 
-    wird der Dateipuffer zurückgegeben und mit dem Zeiger writing verbunden.
-    */
     FILE* writing;
     if ((writing = fdopen(fd1, "w")) == NULL)
     {
@@ -150,23 +132,6 @@ int main(int argc, char *argv[])
     char puffer[PIPE_BUF];
     FILE *reading;
 
-    // if(mkfifo("foundpathes", 0660) == -1) {
-    //     std::cerr << "Could not make pipe\n";
-    //     return EXIT_FAILURE;
-    // }
-
-    /*
-    pipe(fd): Diese Funktion erstellt eine Pipe und gibt zwei Dateideskriptoren zurück, 
-    die die beiden Enden der Pipe repräsentieren. fd ist ein Array von zwei Integer-Werten,
-    in dem diese beiden Dateideskriptoren gespeichert werden. fd[0] repräsentiert das Leseende der Pipe,
-    während fd[1] das Schreibende der Pipe ist.
-
-    < 0: Der Ausdruck überprüft, ob das Ergebnis von pipe(fd) negativ ist. Wenn dies der Fall ist,
-    bedeutet es, dass das Erstellen der Pipe fehlgeschlagen ist. Normalerweise passiert dies, 
-    wenn das System keine weiteren Dateideskriptoren für die Pipe vergeben kann, 
-    oder aus anderen Gründen, die das Erstellen der Pipe verhindern.
-    */
-
     /* create a pipe */
     if (pipe(fd) < 0)
     {
@@ -223,28 +188,5 @@ int main(int argc, char *argv[])
         }
     }
     
-    // pid_t childpid;
-    // while((childpid = waitpid(-1, NULL, WNOHANG))) {
-    //     if(childpid == -1 && (errno != EINTR)) {
-    //         break;
-    //     }
-    // }
-    // FILE* fp;
-    // char buff[PIPE_BUF];
-    // if((fp = fopen("foundpathes", "r")) != NULL) {
-    //     while(fgets(buff, sizeof(buff), fp) != NULL) {
-    //         fputs(buff, stdout);
-    //     }
-    //     fclose(fp);
-
-    //     //remove pipe
-    //     if(remove("foundpathes") == -1){
-    //         std::cerr << "Could not remove pipe\n";
-    //         return EXIT_FAILURE;
-    //     }
-    // } else {
-    //     std::cerr << "Could not open pipe for reading\n";
-    //     return EXIT_FAILURE;
-    // }
     return EXIT_SUCCESS;
 }
