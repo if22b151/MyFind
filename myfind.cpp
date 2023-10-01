@@ -83,6 +83,16 @@ void fileSearchthroughDir(char* searchdir, const std::string& filename, bool rec
     return;
 }
 
+void waitingForChild()
+{
+    pid_t childpid;
+    while((childpid = waitpid(-1, NULL, WNOHANG))) {    //fängt alle Kinderprozesse
+        if(childpid == -1 && (errno != EINTR)) {
+            break;
+        }
+    }
+}
+
 /* main Funktion mit Argumentbehandlung */
 int main(int argc, char *argv[])
 {
@@ -152,6 +162,7 @@ int main(int argc, char *argv[])
         {
             case -1:
                 std::cerr << "Could not make child\n";
+                waitingForChild();
                 return EXIT_FAILURE;
             break;
             case 0:
@@ -181,12 +192,7 @@ int main(int argc, char *argv[])
     }
     fclose(reading);
 
-    pid_t childpid;
-    while((childpid = waitpid(-1, NULL, WNOHANG))) {    //fängt alle Kinderprozesse
-        if(childpid == -1 && (errno != EINTR)) {
-            break;
-        }
-    }
+    waitingForChild();
     
     return EXIT_SUCCESS;
 }
