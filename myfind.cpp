@@ -21,10 +21,10 @@ void print_usage()
     exit(EXIT_FAILURE);
 }
 
-void writeInPipe(std::vector<std::string>& foundPathes, int fd1) 
+void writeInPipe(const std::vector<std::string>& foundPathes, int& fd1) 
 {
     FILE* writing;
-    if ((writing = fdopen(fd1, "w")) == NULL)
+    if ((writing = fdopen(fd1, "w")) == NULL) //dateideskriptor wird als dateipuffer geöffnet und mit writing verbunden
     {
         std::cerr << "Could not open file for writing\n";
         perror("fdopen");
@@ -32,10 +32,10 @@ void writeInPipe(std::vector<std::string>& foundPathes, int fd1)
     }
 
     std::vector<std::string> allPathes;
-    if(foundPathes.empty())
+    if(foundPathes.empty()) //wenn nichts gefunden ist, ist der vector leer
         allPathes.emplace_back(std::to_string(getpid()) + ": File not found!");
 
-    for(size_t i = 0; i < foundPathes.size(); i+=2)
+    for(size_t i = 0; i < foundPathes.size(); i+=2) //alles was gefunden wurde, wird im vektor gespeichert
     {
         allPathes.emplace_back(std::to_string(getpid()) + ": " + foundPathes[i] + ": " + foundPathes[i+1]);
     }
@@ -50,7 +50,7 @@ void writeInPipe(std::vector<std::string>& foundPathes, int fd1)
     fclose(writing);
 }
 
-void fileSearch(std::string filename, bool case_insensitive, std::string filenameStr, std::string absolutePath, std::vector<std::string>& foundPathes)
+void fileSearch(const std::string& filename, bool case_insensitive, const std::string& filenameStr, std::string absolutePath, std::vector<std::string>& foundPathes)
 {
     //convertion from string to const char* because strncasecmp() compares two char* variables
     if(case_insensitive) {
@@ -65,9 +65,9 @@ void fileSearch(std::string filename, bool case_insensitive, std::string filenam
     }
 }
 
-void fileSearchthroughDir(char* searchdir, std::string filename, bool recursivOption, bool case_insensitive, std::vector<std::string>& foundPathes)
+void fileSearchthroughDir(char* searchdir, const std::string& filename, bool recursivOption, bool case_insensitive, std::vector<std::string>& foundPathes)
 {   
-    if(recursivOption){
+    if(recursivOption){ //recursive variante
         for(const auto& entry : fs::recursive_directory_iterator(searchdir)) {
             const auto filenameStr = entry.path().filename().string();
             if(fs::is_regular_file(entry))
@@ -156,10 +156,10 @@ int main(int argc, char *argv[])
             break;
             case 0:
             // child
-                close(fd[0]); //schließt lesen
+                close(fd[0]); //Kinderprozess schließt lesen
                 fileSearchthroughDir(searchdir, argv[optind], recursivOption, case_insensitive, foundPathes);
                 writeInPipe(foundPathes, fd[1]);
-            return EXIT_SUCCESS;
+                return EXIT_SUCCESS;
             default:
             optind++;
             //parent
@@ -167,14 +167,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    close(fd[1]); //schließt schreiben
-    if ((reading = fdopen(fd[0], "r")) == NULL)
+    close(fd[1]); //Elternprozess schließt schreiben
+    if ((reading = fdopen(fd[0], "r")) == NULL) //dateideskriptor wird als dateipuffer geöffnet und mit reading verbunden
     {
         std::cerr << "Could not open file for reading\n";
         perror("fdopen");
         return EXIT_FAILURE;
     }
-    while (fgets(puffer, PIPE_BUF, reading) != NULL)
+    while (fgets(puffer, PIPE_BUF, reading) != NULL) //liest aus pipe und schreibt in stdout
     {
         fputs(puffer, stdout);
         fflush(stdout);
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
     fclose(reading);
 
     pid_t childpid;
-    while((childpid = waitpid(-1, NULL, WNOHANG))) {
+    while((childpid = waitpid(-1, NULL, WNOHANG))) {    //fängt alle Kinderprozesse
         if(childpid == -1 && (errno != EINTR)) {
             break;
         }
